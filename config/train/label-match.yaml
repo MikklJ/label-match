@@ -1,0 +1,58 @@
+## MODEL OPTIONS
+opt: adam # Optimizer [sgd, adam]
+arch: siamese-small # Backbones or versions to use [resnet18, resnet50]
+cuda: 1 # Default 1 or set it 0 for cpu
+gpuid: 0 # GPU ID to use
+n_epoch: 60 # Number of Epochs, Default 60
+l_rate: 1.0e-4 # Default 1e-4
+w_decay: 5.0e-4 # Default 5e-4
+# IF SGD
+momentum: 0.99 # Default 0.99
+# VALIDATE
+val_epoch: 5 # Validate at every x epochs, Default 5
+# SAVE MODEL
+save_model_n_epoch: 10
+# VISUALIZE
+viz_loss_n_iter: 10
+viz_image_n_iter: 100
+viz_console_n_iter: 50
+
+# LOADER PARAMETERS
+train_dataloaders:
+  - dataset: cropped
+    split: train
+    root: /home/ege/experiments/datasets/bdd100k
+    img_size: [-1, -1]
+    batch_size: 8
+    num_workers: 4
+    shuffle: True
+    alterations: 
+      resize: 0.25
+      jitter:
+        brightness: 0.4
+        contrast: 0.4
+        saturation: 0.2
+        hue: 0.05
+      normalize:
+        mean: [0.485, 0.456, 0.406]
+        std: [0.229, 0.224, 0.225]
+
+val_dataloaders:
+  - dataset: cityscapes
+    split: test
+    root: /home/ege/Data/share/Perception/Cityscapes/
+    img_size: [-1, -1]
+    batch_size: 1
+    num_workers: 4
+    shuffle: True
+    alterations:
+      resize: 0.25
+      jitter:
+        brightness: 0.4
+        contrast: 0.4
+        saturation: 0.2
+        hue: 0.05
+      normalize:
+        mean: [0.485, 0.456, 0.406]
+        std: [0.229, 0.224, 0.225]
+    
