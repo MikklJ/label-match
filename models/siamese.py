@@ -36,7 +36,7 @@ Dubbed SalakhNet as in Salakhutdinov, the main author of the paper.
 
 class SalakhNet(nn.Module):
     def __init__(self):
-        super(EmbeddingNet, self).__init__()
+        super(SalakhNet, self).__init__()
         """
         TASK FOR MICHAEL:Your layer definitions come here
         

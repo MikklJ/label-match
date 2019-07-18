@@ -9,7 +9,7 @@ import os
 import json
 
 # Root folder of the image files
-root = "/home/michael/datasets/michael_processed/"
+root = "/home/ege/experiments/datasets/from_michael_to_ege/michael_processed/"
 counter = 1
 outputLabels = {}
 
@@ -19,7 +19,7 @@ class GetOutOfLoop(Exception):
 
 
 try:
-    for dir in os.listdir(root):
+    for dir in os.listdir(root)[::-1]:
         for image in os.listdir(root + dir):
             print("\nImage", counter, ":", dir + "/" + image)
             counter += 1
