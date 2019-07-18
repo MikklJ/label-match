@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -36,18 +37,34 @@ Dubbed SalakhNet as in Salakhutdinov, the main author of the paper.
 
 class SalakhNet(nn.Module):
     def __init__(self):
-        super(EmbeddingNet, self).__init__()
+        super(SalakhNet, self).__init__()
         """
         TASK FOR MICHAEL:Your layer definitions come here
-        
-
         """
+        self.convnet = nn.Sequential(
+            nn.Conv2d(1, 64, 10, stride=1), nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, 7, stride = 1), nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(128, 128, 4, stride = 1), nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(128, 256, 4, stride = 1), nn.ReLU()
+        )
+        self.fc = nn.Sequential(
+            # Create 4096-element feature vector
+            nn.Linear(256 * 6 * 6, 4096), nn.Sigmoid()
+        )
 
     def forward(self, x):
         """
         TASK FOR MICHAEL:Your forward computations come here
-
         """
+        # Create feature maps using CNN
+        output = self.convnet(x)
+        # Flatten feature maps
+        output = output.view(output.size(0), -1)
+        # Feed flattened vector into fully connected layer
+        output = self.fc(output)
         return output
 
     def get_embedding(self, x):
@@ -112,3 +129,13 @@ class TripletNet(nn.Module):
 
     def get_embedding(self, x):
         return self.embedding_net(x)
+
+# Test whether SalakhNet works
+if __name__ == "__main__":
+    net = SalakhNet()
+    tensor = torch.rand(105, 105).unsqueeze(0).unsqueeze(0)
+    print(tensor.size())
+    output = net(tensor)
+    print("Feature Vector of size:", output.size())
+    print(output)
+    
