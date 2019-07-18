@@ -7,7 +7,7 @@ The repo for matching annotations from distinct video frames. This research has 
 ## Progress
 
 - [x] Initialize repository with design goals (10 minutes)
-- [ ] Learn using gcloud resources and transition code to google cloud (1/2 day)
+- [X] Learn using gcloud resources and transition code to google cloud (1/2 day)
 - [X] Learn using git(add&commit&pull&push pipeline) and transition code to bitbucket so two people can work on the project at the same time. (1/2 day)
 - [ ] **Prepare Dataloader for getting cropped images by using the bboxes of bdd-dataset during training (let's call this dataset "Cropped")** (1 day)
 - [ ] **Implement siamese or triplet networks** (3 days)
