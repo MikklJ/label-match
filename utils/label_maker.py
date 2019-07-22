@@ -9,8 +9,10 @@ import os
 import json
 
 # Root folder of the image files
-root = "/home/ege/experiments/datasets/from_michael_to_ege/michael_processed/"
-counter = 1
+root = "/home/michael/datasets/michael_processed/"
+totalCounter = 1
+doneCounter = 1
+
 outputLabels = {}
 
 
@@ -21,8 +23,9 @@ class GetOutOfLoop(Exception):
 try:
     for dir in os.listdir(root)[::-1]:
         for image in os.listdir(root + dir):
-            print("\nImage", counter, ":", dir + "/" + image)
-            counter += 1
+            print("\nIMAGES LABELED:", doneCounter)
+            print("\nImage", totalCounter, ":", dir + "/" + image)
+            totalCounter += 1
             label = ""
             img = cv2.imread(root + dir + "/" + image)
             # img_scaled = cv2.resize(img, (1000, 1000))
@@ -38,6 +41,7 @@ try:
             elif label != "":
                 print("Final Label =", label)
                 outputLabels.update({root + dir + "/" + image: label})
+                doneCounter += 1
             else:
                 print("SKIPPED", root + dir + "/" + image)
 except GetOutOfLoop:
@@ -47,5 +51,5 @@ print("\nDict values:")
 for key, value in outputLabels.items():
     print(key, "with Label:", value)
 
-with open("labels.json", 'w') as json_file:
+with open("labels2.json", 'w') as json_file:
     json.dump(outputLabels, json_file)
