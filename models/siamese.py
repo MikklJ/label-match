@@ -42,13 +42,17 @@ class SalakhNet(nn.Module):
         TASK FOR MICHAEL:Your layer definitions come here
         """
         self.convnet = nn.Sequential(
-            nn.Conv2d(1, 64, 10, stride=1), nn.ReLU(),
+            nn.Conv2d(1, 64, 10, stride=1), 
+            nn.ReLU(),
             nn.MaxPool2d(2),
-            nn.Conv2d(64, 128, 7, stride = 1), nn.ReLU(),
+            nn.Conv2d(64, 128, 7, stride = 1), 
+            nn.ReLU(),
             nn.MaxPool2d(2),
-            nn.Conv2d(128, 128, 4, stride = 1), nn.ReLU(),
+            nn.Conv2d(128, 128, 4, stride = 1), 
+            nn.ReLU(),
             nn.MaxPool2d(2),
-            nn.Conv2d(128, 256, 4, stride = 1), nn.ReLU()
+            nn.Conv2d(128, 256, 4, stride = 1), 
+            nn.ReLU()
         )
         self.fc = nn.Sequential(
             # Create 4096-element feature vector
