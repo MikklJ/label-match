@@ -1,6 +1,6 @@
 from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils import data
-from bdd_utils import *
+from .bdd_utils import *
 from PIL import Image
 #from utils.pad_collate import PadCollate
 
@@ -77,8 +77,15 @@ class CroppedDataset(data.Dataset):
         images_list = [key.replace("michael/", "ege/") for key in labels]
         label_list = [label for key, label in labels.items()]
                                    
+        if new_split == "train":
+            images_list = images_list[:2000]
+            label_list = label_list[:2000]
+        if new_split == "val":
+            images_list = images_list[2000:]
+            label_list = label_list[2000:]
+        
         #images_list = images_list[:30000] #30000
-        for i in range(2000):
+        for i in range(len(images_list)):
             while True:
                 is_repeat = False
                 rand_pair = np.random.choice(np.arange(len(images_list)), size=2, replace=False)
@@ -196,9 +203,18 @@ if __name__ == "__main__":
     #loader = LoaderWrapper(noisyLoader, batch_size=train_config['batch_size'])
     trainloader = data.DataLoader(dataset, batch_size=train_config['batch_size'], num_workers=train_config['num_workers'], shuffle=train_config['shuffle'])
 
+    counter = 0
     for i, (image_1, image_2, label_1, label_2) in enumerate(trainloader):
         #print(i, image_1, image_2, label_1, label_2)
+        # Check shape of tensors
         if i < 10:
             print(image_1.shape, ";", label_1)
             print(image_2.shape, ";", label_2)
+            
+        # Ckeck for any 160x0 sized matrices
+        if list(image_1.shape)[3] == 0:
+            counter += 1
+        if list(image_2.shape)[3] == 0:
+            counter += 1
         
+    print(counter)

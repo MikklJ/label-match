@@ -69,6 +69,7 @@ class SalakhNet(nn.Module):
         output = output.view(output.size(0), -1)
         # Feed flattened vector into fully connected layer
         output = self.fc(output)
+        
         return output
 
     def get_embedding(self, x):
@@ -109,12 +110,23 @@ class ClassificationNet(nn.Module):
 class SiameseNet(nn.Module):
     def __init__(self, embedding_net):
         super(SiameseNet, self).__init__()
-        self.embedding_net = embedding_net
+        self.embedding_net = embedding_net()
 
     def forward(self, x1, x2):
         output1 = self.embedding_net(x1)
         output2 = self.embedding_net(x2)
-        return output1, output2
+        
+        print("Feature Vector 1:", output1)
+        print("Feature Vector 2:", output2)
+        alpha = torch.rand(4096)
+        #alpha = torch.ones(4096)
+        
+        distance = torch.abs(output1 -  output2).squeeze(0)
+        print("Vectorized distance", distance)
+        print("Alpha", alpha)
+        distance = torch.sigmoid(torch.dot(alpha, distance)) 
+        #distance = torch.sigmoid(torch.tensor(-1000).float())
+        return distance.data.tolist()
 
     def get_embedding(self, x):
         return self.embedding_net(x)
@@ -136,10 +148,37 @@ class TripletNet(nn.Module):
 
 # Test whether SalakhNet works
 if __name__ == "__main__":
+    """
     net = SalakhNet()
     tensor = torch.rand(105, 105).unsqueeze(0).unsqueeze(0)
     print(tensor.size())
     output = net(tensor)
     print("Feature Vector of size:", output.size())
     print(output)
+    """
     
+    net = SiameseNet(SalakhNet)
+    """
+    for i, (image_1, image_2, label_1, label_2) in enumerate(trainloader):
+        tensor1 = image_1
+        tensor2 = image_2
+        distance = net(tensor1, tensor2)
+        print("Scalarized distance:", distance, "\n\n")
+        if i > 10:
+            break"""
+    
+    for i in range(10):
+        print("Test", i + 1)
+        tensor1 = torch.rand(105, 105).unsqueeze(0).unsqueeze(0)
+        tensor2 = torch.rand(105, 105).unsqueeze(0).unsqueeze(0)
+        print("Shape:", tensor1.shape)
+        
+        zerotensor = torch.zeros(105,105).unsqueeze(0).unsqueeze(0)
+        onestensor = torch.ones(105,105).unsqueeze(0).unsqueeze(0)
+        #print(zerotensor.shape)
+        #print(onestensor.shape)
+        #print("Tensor 1:", tensor1)
+        #print("Tensor 2:", tensor2)
+
+        distance = net(zerotensor, onestensor)
+        print("Scalarized distance:", distance, "\n\n")
