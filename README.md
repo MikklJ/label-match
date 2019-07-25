@@ -14,7 +14,7 @@ The repo for matching annotations from distinct video frames. This research has 
 - [ ] **Prepare siamese loss (or triplet loss)** (1-2 days)
 - [ ] **Training of siamese networks can be done online, but for best results train the network with considerable amount of cropped images** (3 days)
 - [ ] **Formalize report of accuracies and validate against ground truth labels, you can use your previous labels for this** (1 day)
-- [ ] **Integrate Siamese network into the annotation workflow** (1 day)
+- [X] **Integrate Siamese network into the annotation workflow** (1 day)
 - [ ] **Demo Results** (1 day)
 - [ ] (optional) visualize shallow model on the Cropped Database (1/2 day)
 
