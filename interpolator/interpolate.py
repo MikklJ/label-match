@@ -14,6 +14,7 @@ from BoundingBox import BoundingBox
 import PIL.Image as Image
 import numpy as np
 import random
+import torch
 
 # Check command line arguments
 if len(sys.argv) == 3:
@@ -75,11 +76,17 @@ if len(json0BBox) <= len(jsonNBBox):
         bounded_image = firstFrameImage.crop(
             (bbox0.pointMajor[0], bbox0.pointMajor[1], bbox0.pointMinor[0], bbox0.pointMinor[1]))
         image_tensor = np.array(bounded_image).astype(np.float32)
-
+        image_tensor = np.transpose(image_tensor, (2, 0, 1))
+        image_tensor = torch.from_numpy(image_tensor).float().unsqueeze(0)
+        #print(image_tensor.shape)
+        
         for bboxN in jsonNBBox:
             compared_image = lastFrameImage.crop(
                 (bboxN.pointMajor[0], bboxN.pointMajor[1], bboxN.pointMinor[0], bboxN.pointMinor[1]))
             compared_tensor = np.array(compared_image).astype(np.float32)
+            compared_tensor = np.transpose(compared_tensor, (2, 0, 1))
+            compared_tensor = torch.from_numpy(compared_tensor).float().unsqueeze(0)
+            
             p = random.random()  # SiameseNet(image_tensor, compared_tensor)
             p_list.append(p)
 
@@ -104,12 +111,17 @@ else:
             (bboxN.pointMajor[0], bboxN.pointMajor[1], bboxN.pointMinor[0], bboxN.pointMinor[1])
         )
         image_tensor = np.array(bounded_image).astype(np.float32)
-
+        image_tensor = np.transpose(image_tensor, (2, 0, 1))
+        image_tensor = torch.from_numpy(image_tensor).float().unsqueeze(0)
+        
         for bbox0 in json0BBox:
             compared_image = firstFrameImage.crop(
                 (bbox0.pointMajor[0], bbox0.pointMajor[1], bbox0.pointMinor[0], bbox0.pointMinor[1])
             )
             compared_tensor = np.array(compared_image).astype(np.float32)
+            compared_tensor = np.transpose(compared_tensor, (2, 0, 1))
+            compared_tensor = torch.from_numpy(compared_tensor).float().unsqueeze(0)
+            
             p = random.random()  # SiameseNet(image_tensor, compared_tensor)
             p_list.append(p)
 
@@ -184,6 +196,7 @@ for box in jsonNBBox:
 firstJson = os.path.basename(json0)
 lastJson = os.path.basename(jsonN)
 numberOfFrames = int(lastJson.split('.')[0]) - int(firstJson.split('.')[0])
+exit(0)
 
 # Write to .json files storing labeling information for intermediate frames
 # Assumes that box json0BBox[n] and box jsonNBBox[n] describes the same object
