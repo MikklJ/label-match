@@ -42,7 +42,8 @@ class SalakhNet(nn.Module):
         TASK FOR MICHAEL:Your layer definitions come here
         """
         self.convnet = nn.Sequential(
-            nn.Conv2d(1, 64, 10, stride=1), 
+            nn.AdaptiveAvgPool2d((105, 105)),
+            nn.Conv2d(3, 64, 10, stride=1), 
             nn.ReLU(),
             nn.MaxPool2d(2),
             nn.Conv2d(64, 128, 7, stride = 1), 
@@ -52,7 +53,7 @@ class SalakhNet(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(2),
             nn.Conv2d(128, 256, 4, stride = 1), 
-            nn.ReLU()
+            nn.ReLU(),
         )
         self.fc = nn.Sequential(
             # Create 4096-element feature vector
@@ -111,22 +112,22 @@ class SiameseNet(nn.Module):
     def __init__(self, embedding_net):
         super(SiameseNet, self).__init__()
         self.embedding_net = embedding_net()
+        self.alpha = torch.rand(4096).to('cuda:0')
 
     def forward(self, x1, x2):
         output1 = self.embedding_net(x1)
         output2 = self.embedding_net(x2)
         
-        print("Feature Vector 1:", output1)
-        print("Feature Vector 2:", output2)
-        alpha = torch.rand(4096)
-        #alpha = torch.ones(4096)
+        #print("Feature Vector 1:", output1)
+        #print("Feature Vector 2:", output2)
         
         distance = torch.abs(output1 -  output2).squeeze(0)
-        print("Vectorized distance", distance)
-        print("Alpha", alpha)
-        distance = torch.sigmoid(torch.dot(alpha, distance)) 
-        #distance = torch.sigmoid(torch.tensor(-1000).float())
-        return distance.data.tolist()
+        #print(distance)
+        
+        distance = torch.sigmoid(torch.dot(self.alpha, distance)) 
+
+        #print(distance)
+        return distance
 
     def get_embedding(self, x):
         return self.embedding_net(x)
@@ -171,6 +172,7 @@ if __name__ == "__main__":
         print("Test", i + 1)
         tensor1 = torch.rand(105, 105).unsqueeze(0).unsqueeze(0)
         tensor2 = torch.rand(105, 105).unsqueeze(0).unsqueeze(0)
+        
         print("Shape:", tensor1.shape)
         
         zerotensor = torch.zeros(105,105).unsqueeze(0).unsqueeze(0)

@@ -1,6 +1,6 @@
 from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils import data
-from .bdd_utils import *
+from loader.bdd_utils import *
 from PIL import Image
 #from utils.pad_collate import PadCollate
 
@@ -86,25 +86,53 @@ class CroppedDataset(data.Dataset):
         
         #images_list = images_list[:30000] #30000
         for i in range(len(images_list)):
+            # Different pairs
             while True:
-                is_repeat = False
-                rand_pair = np.random.choice(np.arange(len(images_list)), size=2, replace=False)
+                rand_index = int(np.random.choice(np.arange(len(images_list)), size=1, replace=False))
+
+                image = images_list[rand_index]
+                label = label_list[rand_index]
+
+                same_indices = []
+                diff_indices = []
                 
-                for pair in self.data:
-                    if pair['image_1'] == images_list[rand_pair[0]] and pair['image_2'] == images_list[rand_pair[1]]:
-                        is_repeat = True
+                for i, image in enumerate(images_list):
+                    if label_list[i] == label:
+                        same_indices.append(i)
+                    else:
+                        diff_indices.append(i)
                 
-                if is_repeat:
-                    pass
-                else:
-                    self.data.append({
-                        'image_1': images_list[rand_pair[0]],
-                        'image_2': images_list[rand_pair[1]],
-                        'label_1': label_list[rand_pair[0]],
-                        'label_2': label_list[rand_pair[1]]
-                    })
+                if len(same_indices) > 1:
                     break
-        
+
+            pair_index = np.random.choice(same_indices, size=2, replace=False)
+            self.data.append({
+                'image_1': image,
+                'image_2': images_list[pair_index[0]],
+                'label_1': label,
+                'label_2': label_list[pair_index[0]]
+            })
+            self.data.append({
+                'image_1': image,
+                'image_2': images_list[pair_index[1]],
+                'label_1': label,
+                'label_2': label_list[pair_index[1]]
+            })
+            
+            pair_index = np.random.choice(diff_indices, size=2, replace=False)
+            self.data.append({
+                'image_1': image,
+                'image_2': images_list[pair_index[0]],
+                'label_1': label,
+                'label_2': label_list[pair_index[0]]
+            })
+            self.data.append({
+                'image_1': image,
+                'image_2': images_list[pair_index[1]],
+                'label_1': label,
+                'label_2': label_list[pair_index[1]]
+            })
+            
         #print(len(self.data))
         np.random.shuffle(self.data)
 
@@ -118,7 +146,8 @@ class CroppedDataset(data.Dataset):
         img_2 = Image.open(self.data[index]['image_2'])
         label_1 = self.data[index]["label_1"]
         label_2 = self.data[index]["label_2"]
-
+        
+        
         width_1, height_1 = img_1.size
         width_2, height_2 = img_2.size
         
@@ -167,9 +196,17 @@ class CroppedDataset(data.Dataset):
         img_1 = np.transpose(img_1, (2, 0, 1))
         img_2 = np.transpose(img_2, (2, 0, 1))
 
+        img_1 = img_1/255.0
+        img_1 = np.minimum(img_1, 1.0)
+        img_2 = img_2/255.0
+        img_2 = np.minimum(img_2, 1.0)
+        
         # Convert labels to tensors
         label_1 = torch.from_numpy(label_1).float()
         label_2 = torch.from_numpy(label_2).float()
+        
+        #print(img_1.shape)
+        #print(img_2.shape)
         
         return img_1, img_2, label_1, label_2
         #return self.transforms(noise_img), self.transforms(gt_img), annotation
@@ -205,6 +242,8 @@ if __name__ == "__main__":
 
     counter = 0
     for i, (image_1, image_2, label_1, label_2) in enumerate(trainloader):
+        if i % 100 == 0:
+            print(i)
         #print(i, image_1, image_2, label_1, label_2)
         # Check shape of tensors
         if i < 10:

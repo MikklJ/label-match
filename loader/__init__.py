@@ -5,5 +5,5 @@ def get_loader(name):
     :param name:
     """
     return {
-        'cropped':croppedDataset
+        'cropped':CroppedDataset
     }[name]

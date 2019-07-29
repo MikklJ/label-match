@@ -2,7 +2,7 @@ import os
 import numpy as np
 import torch
 import torch.nn.functional as F
-from utils._utils import getTops
+#from utils._utils import getTops
 
 def save_loss_path(outdir, arch, opt, l_rate, epoch, n_epoch, iter, loss):
     save_loss_path = outdir+"/losses"
@@ -24,13 +24,14 @@ def cross_entropy2d(input, target, weight=None, size_average=True):
         # loss /= mask.data.sum()
     return loss
 
+"""
 def unnormalize(img):
     img = img.copy()
     img[:, 0, :, :] = (img[:, 0, :, :] * 0.229 + 0.485)
     img[:, 1, :, :] = (img[:, 1, :, :] * 0.224 + 0.456)
     img[:, 2, :, :] = (img[:, 2, :, :] * 0.225 + 0.406)
     return img
-
+"""
 def label_mapper(labels):
     return {label[1]: np.array(label[7]) for label in labels}
 

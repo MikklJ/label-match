@@ -1,9 +1,11 @@
 ## MODEL OPTIONS
-opt: adam # Optimizer [sgd, adam]
-arch: siamese-small # Backbones or versions to use [resnet18, resnet50]
+
+arch: siamese # Backbones or versions to use [resnet18, resnet50]
 cuda: 1 # Default 1 or set it 0 for cpu
 gpuid: 0 # GPU ID to use
 n_epoch: 60 # Number of Epochs, Default 60
+
+opt: adam # Optimizer [sgd, adam]
 l_rate: 1.0e-4 # Default 1e-4
 w_decay: 5.0e-4 # Default 5e-4
 # IF SGD
@@ -12,6 +14,7 @@ momentum: 0.99 # Default 0.99
 val_epoch: 5 # Validate at every x epochs, Default 5
 # SAVE MODEL
 save_model_n_epoch: 10
+
 # VISUALIZE
 viz_loss_n_iter: 10
 viz_image_n_iter: 100
