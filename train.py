@@ -25,7 +25,7 @@ from utils._utils import get_config, unnormalize
 from utils.train_utils import *
 from tensorboardX import SummaryWriter
 from loader.bdd_utils import michael_labels 
-
+from time import sleep
 """
 Backbone Cellar Training
 
@@ -76,7 +76,7 @@ def train(args):
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    loss_alg = torch.nn.BCEWithLogitsLoss()
+    loss_alg = torch.nn.BCELoss()
         
     for epoch in range(config['n_epoch']):
         start = time.time()
@@ -103,10 +103,15 @@ def train(args):
             #print("Distance", distance_hat)
             loss = 0.0
             if torch.all(torch.eq(label_1, label_2)):
+                #print("SAME", distance_hat, "\n")
+                
                 loss += loss_alg(distance_hat, torch.tensor(1.0).to(device)) #,loss_weights[nclass])
             else:
-                loss += loss_alg(distance_hat, torch.tensor(0.0).to(device)) #,loss_weights[nclass])
+                #print("DIFF", distance_hat, "\n")
                 
+                loss += loss_alg(distance_hat, torch.tensor(0.0).to(device)) #,loss_weights[nclass])
+            
+            #sleep(1)
             loss.backward()
             optimizer.step()
 

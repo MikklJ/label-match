@@ -64,10 +64,12 @@ class SalakhNet(nn.Module):
         """
         TASK FOR MICHAEL:Your forward computations come here
         """
+        #print(x)
         # Create feature maps using CNN
         output = self.convnet(x)
         # Flatten feature maps
-        output = output.view(output.size(0), -1)
+        output = output.view(output.size()[0], -1)
+        #print(output)
         # Feed flattened vector into fully connected layer
         output = self.fc(output)
         
@@ -122,11 +124,9 @@ class SiameseNet(nn.Module):
         #print("Feature Vector 2:", output2)
         
         distance = torch.abs(output1 -  output2).squeeze(0)
-        #print(distance)
-        
+        #print(distance.shape)
+        #distance = self.fc_fuse(distance)
         distance = torch.sigmoid(torch.dot(self.alpha, distance)) 
-
-        #print(distance)
         return distance
 
     def get_embedding(self, x):
