@@ -98,12 +98,8 @@ class CroppedDataset(data.Dataset):
                     break
             #print(same_indices, "\n")
             #print(diff_indices, "\n")
-            
-<<<<<<< HEAD
             pair_index = np.random.choice(same_indices, size=1, replace=False)
-=======
-            pair_index = np.random.choice(same_indices, size=2, replace=False)
->>>>>>> 6cd19819354af81e1aadf626cfda55b7e06b807e
+
             self.data.append({
                 'image_1': images_list[rand_index],
                 'image_2': images_list[pair_index[0]],
@@ -118,11 +114,8 @@ class CroppedDataset(data.Dataset):
                 'label_2': label_list[pair_index[1]]
             })"""
             
-<<<<<<< HEAD
             pair_index_2 = np.random.choice(diff_indices, size=1, replace=False)
-=======
-            pair_index_2 = np.random.choice(diff_indices, size=2, replace=False)
->>>>>>> 6cd19819354af81e1aadf626cfda55b7e06b807e
+
             self.data.append({
                 'image_1': images_list[rand_index],
                 'image_2': images_list[pair_index_2[0]],
@@ -135,14 +128,7 @@ class CroppedDataset(data.Dataset):
                 'image_2': images_list[pair_index_2[1]],
                 'label_1': label_list[rand_index],
                 'label_2': label_list[pair_index_2[1]]
-<<<<<<< HEAD
             })"""
-            
-            #print(self.data)
-            #exit(0)
-=======
-            })
->>>>>>> 6cd19819354af81e1aadf626cfda55b7e06b807e
             
             #print(self.data)
             #exit(0)
@@ -258,7 +244,7 @@ if __name__ == "__main__":
     # TODO: debug dataset initialization
     #loader = LoaderWrapper(noisyLoader, batch_size=train_config['batch_size'])
     trainloader = data.DataLoader(dataset, batch_size=train_config['batch_size'], num_workers=train_config['num_workers'], shuffle=train_config['shuffle'])
-
+    
     counter = 0
     
     same_counter = 0
@@ -283,29 +269,17 @@ if __name__ == "__main__":
         #    counter += 1
         #if list(image_2.shape)[3] == 0:
         #    counter += 1
-<<<<<<< HEAD
         #print(np.argmax(label_1.numpy()))
         #print(np.argmax(label_2.numpy()))
-=======
         print(np.argmax(label_1.numpy()))
         print(np.argmax(label_2.numpy()))
->>>>>>> 6cd19819354af81e1aadf626cfda55b7e06b807e
         
         # Check for same-diff balance
         if torch.all(torch.eq(label_1, label_2)):
             same_counter+=1
         elif torch.all(torch.eq(label_1, label_2)) == False:
             diff_counter+=1
-<<<<<<< HEAD
         
     print("Same", same_counter)
     print("Diff", diff_counter)
-        
-    #print(counter)
-=======
-        break
-    print("Same", same_counter)
-    print("Diff", diff_counter)
-        
-    #print(counter)
->>>>>>> 6cd19819354af81e1aadf626cfda55b7e06b807e
+    
