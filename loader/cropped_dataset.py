@@ -13,7 +13,7 @@ import numpy as np
 import json
 
 sys.path.append(".."),
-from utils._utils import get_config
+from utils._utils import get_config, unnormalize
 
 def __deterministic_worker_init_fn(worker_id, seed=0):
     import random
@@ -80,58 +80,55 @@ class CroppedDataset(data.Dataset):
         if new_split == "train":
             images_list = images_list[:2000]
             label_list = label_list[:2000]
-        if new_split == "val":
+        elif new_split == "val":
             images_list = images_list[2000:]
             label_list = label_list[2000:]
         
         #images_list = images_list[:30000] #30000
         for i in range(len(images_list)):
             # Different pairs
+            
             while True:
                 rand_index = int(np.random.choice(np.arange(len(images_list)), size=1, replace=False))
 
-                image = images_list[rand_index]
-                label = label_list[rand_index]
-
-                same_indices = []
-                diff_indices = []
-                
-                for i, image in enumerate(images_list):
-                    if label_list[i] == label:
-                        same_indices.append(i)
-                    else:
-                        diff_indices.append(i)
+                same_indices = [index for index, image in enumerate(images_list) if label_list[index] == label_list[rand_index]]
+                diff_indices = [index for index, image in enumerate(images_list) if label_list[index] != label_list[rand_index]]
                 
                 if len(same_indices) > 1:
                     break
-
+            #print(same_indices, "\n")
+            #print(diff_indices, "\n")
+            
             pair_index = np.random.choice(same_indices, size=2, replace=False)
             self.data.append({
-                'image_1': image,
+                'image_1': images_list[rand_index],
                 'image_2': images_list[pair_index[0]],
-                'label_1': label,
+                'label_1': label_list[rand_index],
                 'label_2': label_list[pair_index[0]]
             })
             self.data.append({
-                'image_1': image,
+                'image_1': images_list[rand_index],
                 'image_2': images_list[pair_index[1]],
-                'label_1': label,
+                'label_1': label_list[rand_index],
                 'label_2': label_list[pair_index[1]]
             })
             
-            pair_index = np.random.choice(diff_indices, size=2, replace=False)
+            pair_index_2 = np.random.choice(diff_indices, size=2, replace=False)
             self.data.append({
-                'image_1': image,
-                'image_2': images_list[pair_index[0]],
-                'label_1': label,
-                'label_2': label_list[pair_index[0]]
+                'image_1': images_list[rand_index],
+                'image_2': images_list[pair_index_2[0]],
+                'label_1': label_list[rand_index],
+                'label_2': label_list[pair_index_2[0]]
             })
             self.data.append({
-                'image_1': image,
-                'image_2': images_list[pair_index[1]],
-                'label_1': label,
-                'label_2': label_list[pair_index[1]]
+                'image_1': images_list[rand_index],
+                'image_2': images_list[pair_index_2[1]],
+                'label_1': label_list[rand_index],
+                'label_2': label_list[pair_index_2[1]]
             })
+            
+            #print(self.data)
+            #exit(0)
             
         #print(len(self.data))
         np.random.shuffle(self.data)
@@ -184,12 +181,16 @@ class CroppedDataset(data.Dataset):
         img_2 = torch.from_numpy(img_2).float()
         
         # Convert labels to numbers
+        
         try:
             label_1 = [el.id for el in michael_labels if el.name == label_1][0]
             label_2 = [el.id for el in michael_labels if el.name == label_2][0]
         except IndexError:
             print(label_1, label_2)
+            exit(1)
+        
         # Convert labels to arrays
+        
         label_1 = (np.array([label_1]) == np.arange(50)).astype(np.int32)
         label_2 = (np.array([label_2]) == np.arange(50)).astype(np.int32)
         
@@ -202,6 +203,7 @@ class CroppedDataset(data.Dataset):
         img_2 = np.minimum(img_2, 1.0)
         
         # Convert labels to tensors
+        
         label_1 = torch.from_numpy(label_1).float()
         label_2 = torch.from_numpy(label_2).float()
         
@@ -241,19 +243,39 @@ if __name__ == "__main__":
     trainloader = data.DataLoader(dataset, batch_size=train_config['batch_size'], num_workers=train_config['num_workers'], shuffle=train_config['shuffle'])
 
     counter = 0
+    
+    same_counter = 0
+    diff_counter = 0
+    
     for i, (image_1, image_2, label_1, label_2) in enumerate(trainloader):
-        if i % 100 == 0:
-            print(i)
+        #if i % 100 == 0:
+        #    print(i)
         #print(i, image_1, image_2, label_1, label_2)
         # Check shape of tensors
         if i < 10:
-            print(image_1.shape, ";", label_1)
-            print(image_2.shape, ";", label_2)
+            #print(unnormalize(image_1.cpu().data.numpy()).squeeze().shape, ";", label_1)
+            #print(unnormalize(image_2.cpu().data.numpy()).squeeze().shape, ";", label_2, "\n")
+            #new_im = Image.fromarray(unnormalize(image_1.cpu().data.numpy()).squeeze())
+            #new_im.save('test.png')
+            #new_im = Image.fromarray(unnormalize(image_2.cpu().data.numpy()).squeeze())
+            #new_im.save('test2.png')
+            pass
             
         # Ckeck for any 160x0 sized matrices
-        if list(image_1.shape)[3] == 0:
-            counter += 1
-        if list(image_2.shape)[3] == 0:
-            counter += 1
+        #if list(image_1.shape)[3] == 0:
+        #    counter += 1
+        #if list(image_2.shape)[3] == 0:
+        #    counter += 1
+        print(np.argmax(label_1.numpy()))
+        print(np.argmax(label_2.numpy()))
         
-    print(counter)
+        # Check for same-diff balance
+        if torch.all(torch.eq(label_1, label_2)):
+            same_counter+=1
+        elif torch.all(torch.eq(label_1, label_2)) == False:
+            diff_counter+=1
+        break
+    print("Same", same_counter)
+    print("Diff", diff_counter)
+        
+    #print(counter)
