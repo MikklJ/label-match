@@ -74,7 +74,7 @@ class CroppedDataset(data.Dataset):
         images_list = []
         
         # Adds all labeled images to image list
-        images_list = [key.replace("michael/", "ege/") for key in labels]
+        images_list = ["/home/ege/experiments/code/main/label-match/"+("/").join(key.split("/")[-4:]) for key in labels]
         label_list = [label for key, label in labels.items()]
                                    
         if new_split == "train":
@@ -83,14 +83,15 @@ class CroppedDataset(data.Dataset):
         if new_split == "val":
             images_list = images_list[2000:]
             label_list = label_list[2000:]
+
         
         #images_list = images_list[:30000] #30000
         for i in range(len(images_list)):
             # Different pairs
             while True:
                 rand_index = int(np.random.choice(np.arange(len(images_list)), size=1, replace=False))
-
                 image = images_list[rand_index]
+                #print(image)
                 label = label_list[rand_index]
 
                 same_indices = []

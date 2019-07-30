@@ -1,5 +1,4 @@
 #from models.vgg16s import dilated_vgg16
-from models.resnet import *
 from models.siamese import *
 
 def _get_model_instance(name):

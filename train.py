@@ -17,11 +17,8 @@ from torch.utils import data
 # custom stuff
 from models import get_model
 from loader import get_loader
-#from loader.bdd_utils import michael_labels 
 from tqdm import tqdm
 from utils._utils import get_config, unnormalize
-#from utils.evaluator import CityscapesEvaluator
-#from cityscapesscripts.helpers import labels
 from utils.train_utils import *
 from tensorboardX import SummaryWriter
 from loader.bdd_utils import michael_labels 
@@ -89,11 +86,6 @@ def train(args):
             label_1 = label_1.to(device)
             label_2 = label_2.to(device)
             
-            #print(image_1.shape)
-            #print(image_2.shape)
-            #print(label_1)
-            #print(label_2)
-            
             iter = len(trainloader)*epoch + i
             
             optimizer.zero_grad()
@@ -103,9 +95,9 @@ def train(args):
             #print("Distance", distance_hat)
             loss = 0.0
             if torch.all(torch.eq(label_1, label_2)):
-                loss += loss_alg(distance_hat, torch.tensor(1.0).to(device)) #,loss_weights[nclass])
+                loss += loss_alg(distance_hat, torch.tensor([1.0]).to(device)) #,loss_weights[nclass])
             else:
-                loss += loss_alg(distance_hat, torch.tensor(0.0).to(device)) #,loss_weights[nclass])
+                loss += loss_alg(distance_hat, torch.tensor([0.0]).to(device)) #,loss_weights[nclass])
                 
             loss.backward()
             optimizer.step()

@@ -112,21 +112,16 @@ class SiameseNet(nn.Module):
     def __init__(self, embedding_net):
         super(SiameseNet, self).__init__()
         self.embedding_net = embedding_net()
-        self.alpha = torch.rand(4096).to('cuda:0')
+        self.alpha = nn.Linear(4096, 1)
 
     def forward(self, x1, x2):
         output1 = self.embedding_net(x1)
         output2 = self.embedding_net(x2)
-        
-        #print("Feature Vector 1:", output1)
-        #print("Feature Vector 2:", output2)
-        
-        distance = torch.abs(output1 -  output2).squeeze(0)
-        #print(distance)
-        
-        distance = torch.sigmoid(torch.dot(self.alpha, distance)) 
 
-        #print(distance)
+        distance = torch.abs(output1 -  output2).squeeze(0)
+        weighted = self.alpha(distance)
+        distance = torch.sigmoid(weighted)
+
         return distance
 
     def get_embedding(self, x):
