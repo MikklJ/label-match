@@ -22,7 +22,7 @@ from utils._utils import get_config, unnormalize
 from utils.train_utils import *
 from tensorboardX import SummaryWriter
 from loader.bdd_utils import michael_labels 
-
+from time import sleep
 """
 Backbone Cellar Training
 
@@ -73,7 +73,7 @@ def train(args):
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    loss_alg = torch.nn.BCEWithLogitsLoss()
+    loss_alg = torch.nn.BCELoss()
         
     for epoch in range(config['n_epoch']):
         start = time.time()
@@ -91,14 +91,13 @@ def train(args):
             optimizer.zero_grad()
             #print(label_1.shape)
             distance_hat = model(image_1, image_2)
-            #print(distance_hat)
-            #print("Distance", distance_hat)
             loss = 0.0
             if torch.all(torch.eq(label_1, label_2)):
-                loss += loss_alg(distance_hat, torch.tensor([1.0]).to(device)) #,loss_weights[nclass])
+                loss += F.binary_cross_entropy_with_logits(distance_hat, torch.tensor([1.0]).to(device)) #,loss_weights[nclass])
             else:
-                loss += loss_alg(distance_hat, torch.tensor([0.0]).to(device)) #,loss_weights[nclass])
-                
+                loss += F.binary_cross_entropy_with_logits(distance_hat, torch.tensor([0.0]).to(device)) #,loss_weights[nclass])
+            
+            #sleep(1)
             loss.backward()
             optimizer.step()
 
@@ -117,6 +116,7 @@ def train(args):
                 start = time.time()
         
         ## EVALUATION
+        """
         if config['val_epoch'] > 0 and ((epoch+1) % config['val_epoch'] == 0):
             # Transfer evaluation functions to a different file and import
             model.eval()
@@ -132,6 +132,7 @@ def train(args):
             print("Validation IOU score: " + str(score*100), "Epoch: "+str(epoch+1))
             writer.add_scalar('Validation IOU score', score*100, (epoch+1))
             model.train()
+        """
 
         if (epoch+1) % config['save_model_n_epoch'] == 0 and ( epoch+1 != config['n_epoch']):
             save_model_path = outdir+"/models"

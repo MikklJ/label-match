@@ -64,10 +64,12 @@ class SalakhNet(nn.Module):
         """
         TASK FOR MICHAEL:Your forward computations come here
         """
+        #print(x)
         # Create feature maps using CNN
         output = self.convnet(x)
         # Flatten feature maps
-        output = output.view(output.size(0), -1)
+        output = output.view(output.size()[0], -1)
+        #print(output)
         # Feed flattened vector into fully connected layer
         output = self.fc(output)
         
@@ -112,17 +114,18 @@ class SiameseNet(nn.Module):
     def __init__(self, embedding_net):
         super(SiameseNet, self).__init__()
         self.embedding_net = embedding_net()
-        self.alpha = nn.Linear(4096, 1)
+        self.fc = nn.Sequential(
+            nn.Linear(4096, 1) #, nn.Sigmoid()
+        )
 
     def forward(self, x1, x2):
         output1 = self.embedding_net(x1)
         output2 = self.embedding_net(x2)
 
         distance = torch.abs(output1 -  output2).squeeze(0)
-        weighted = self.alpha(distance)
-        distance = torch.sigmoid(weighted)
+        metric = self.fc(distance)
 
-        return distance
+        return metric
 
     def get_embedding(self, x):
         return self.embedding_net(x)
