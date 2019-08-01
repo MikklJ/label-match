@@ -42,7 +42,7 @@ Label = namedtuple('Label', [
     'color',  # The color of this label
 ])
 
-
+# Labels for the cropped dataset
 michael_labels = [
     Label(  'red_light'            ,  0 ,        0 , 'void'            , 0       , False        , False        ,  (0, 0, 0)),
     Label(  'black_person'         ,  1 ,        1 , 'void'            , 0       , False        , False        ,  (0, 0, 0)), 

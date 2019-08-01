@@ -1,7 +1,11 @@
 """
-Label applier for images
+UTILITY SCRIPT
+
+Label applier for cropped images (used to create cropped_dataset)
 Author: Michael Ji
 July 16, 2019
+
+Uses OpenCV and a basic keyboard input system
 """
 
 import cv2

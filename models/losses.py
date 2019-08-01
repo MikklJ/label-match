@@ -1,7 +1,12 @@
+"""
+Set of loss functions that can be/are used by the siamese network training file (train.py)
+
+Taken from a siamese Github repo: https://github.com/adambielski/siamese-triplet
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 
 class ContrastiveLoss(nn.Module):
     """
@@ -16,12 +21,16 @@ class ContrastiveLoss(nn.Module):
 
     def forward(self, output1, output2, target, size_average=True):
         distances = (output2 - output1).pow(2).sum(1)  # squared distances
-        print("FV Distance", distances, "--- Target", target, "\n")
+        #print("FV Distance", distances, "--- Target", target, "\n")
         losses = 0.5 * (float(target) * distances +
                         float(1 + -1 * target) * F.relu(self.margin - (distances + self.eps).sqrt()).pow(2))
         return losses.mean() if size_average else losses.sum()
     
 class ContrastiveLoss2(nn.Module):
+    """
+    Alternate test version of contrastive loss
+    """
+    
     def __init__(self):
         super(ContrastiveLoss2, self).__init__()
         

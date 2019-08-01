@@ -1,3 +1,11 @@
+"""
+UTILITY SCRIPT
+
+Takes json file of image directories and labels, prints out every label in the file
+Author: Michael Ji
+July 14, 2019
+"""
+
 import json
 
 size = 0

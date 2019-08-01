@@ -4,19 +4,26 @@ Author: Michael Ji
 July 15, 2019
 
 This program takes .json files with image labeling information (bounding boxes) for two images in a set of
- sequential video frames and edits bounding box information for all images that are between the two specified images
+ sequential video frames and creates bounding box information for all images between the two specified images
+
+Currently using SSIM ratings to match bounding boxes, as SNN approach has some issues
+
+Uses PIL to process images from box information
 """
 
 import json
 import sys
 import os.path
-from BoundingBox import BoundingBox
+from bounding_box import bounding_box
 import PIL.Image as Image
 import numpy as np
 import random
 import torch
+import models
+import pytorch_msssim
+import SSIM_PIL
 
-# Check command line arguments
+# Check command line arguments for two .json label files
 if len(sys.argv) == 3:
     json0 = sys.argv[1]
     jsonN = sys.argv[2]
@@ -28,23 +35,23 @@ else:
 with open(json0) as json_file:
     json0data = json.load(json_file)
     json0shapes = json0data["shapes"]
-    # Debug: print(str(json0shapes) + "... ")
 
 # Retrieve labels from last image (stored in the file specified by path jsonN)
 with open(jsonN) as json_file:
     jsonNdata = json.load(json_file)
     jsonNshapes = jsonNdata["shapes"]
-    # Debug: print(str(jsonNshapes) + "... ")
 
-# Create and fill lists of BoundingBox objects (read from .json)
+# Create and fill lists of bounding_box objects (read from .json)
 json0BBox = []
 jsonNBBox = []
 for box in json0shapes:
-    json0BBox.append(BoundingBox(box["label"], box["points"]))
+    json0BBox.append(bounding_box(box["label"], box["points"]))
 
 for box in jsonNshapes:
-    jsonNBBox.append(BoundingBox(box["label"], box["points"]))
+    jsonNBBox.append(bounding_box(box["label"], box["points"]))
 
+
+# Print coordinates of all read boxes
 print("Unordered first frame boxes. Number of boxes:", len(json0BBox))
 for box in json0BBox:
     print(box)
@@ -53,11 +60,17 @@ print("\nUnordered last frame boxes. Number of boxes:", len(jsonNBBox))
 for box in jsonNBBox:
     print(box)
 
+
 # Read Images and initialize 2D probability matrices
-json0BBoxProbs = []
-jsonNBBoxProbs = []
+json0BBoxProbs = [] # 2D probability matrix if first json file contains more boxes than the last json file
+jsonNBBoxProbs = [] # 2D probability matrix if last json file contains more boxes than the first json file
 firstFrameImage = Image.open(json0.replace(".json", ".png"))
 lastFrameImage = Image.open(jsonN.replace(".json", ".png"))
+
+# Create a (currently nonfunctional) siamese neural network
+model = models.SiameseNet(models.SalakhNet)
+model.load_state_dict(torch.load("outputs/train/2019-07-30-19-26/label_match_0.0001/models/final.pt", map_location='cpu'))
+model.eval()
 
 if len(json0BBox) <= len(jsonNBBox):
     """
@@ -74,23 +87,54 @@ if len(json0BBox) <= len(jsonNBBox):
     for bbox0 in json0BBox:
         p_list = []
         bounded_image = firstFrameImage.crop(
-            (bbox0.pointMajor[0], bbox0.pointMajor[1], bbox0.pointMinor[0], bbox0.pointMinor[1]))
+            (bbox0.pointMajor[0], bbox0.pointMajor[1], bbox0.pointMinor[0], bbox0.pointMinor[1])
+        )
+        # Alternate box processing if SNN is used
+        """
+        width_1, height_1 = bounded_image.size
+        bounded_image = bounded_image.resize((int(width_1 * (160 / height_1)), 160), resample=Image.NEAREST, box=None)
+        width_1, height_1 = bounded_image.size
+        bounded_image = bounded_image.crop((0, 0, width_1 - width_1 % 32, height_1))
         image_tensor = np.array(bounded_image).astype(np.float32)
         image_tensor = np.transpose(image_tensor, (2, 0, 1))
-        image_tensor = torch.from_numpy(image_tensor).float().unsqueeze(0)
-        #print(image_tensor.shape)
-        
+        image_tensor = image_tensor/255.0
+        image_tensor = np.minimum(image_tensor, 1.0)
+        image_tensor = np.array(bounded_image).astype(np.int)
+        image_tensor = torch.from_numpy(image_tensor).unsqueeze(0)
+        """
+        bounded_image = bounded_image.resize((160, 160), resample=Image.NEAREST, box=None)
+
         for bboxN in jsonNBBox:
             compared_image = lastFrameImage.crop(
-                (bboxN.pointMajor[0], bboxN.pointMajor[1], bboxN.pointMinor[0], bboxN.pointMinor[1]))
+                (bboxN.pointMajor[0], bboxN.pointMajor[1], bboxN.pointMinor[0], bboxN.pointMinor[1])
+            )
+            # Alternate box processing if SNN is used
+            """
+            width_1, height_1 = compared_image.size
+            compared_image = compared_image.resize((int(width_1 * (160 / height_1)), 160), resample=Image.NEAREST,
+                                                 box=None)
+            width_1, height_1 = compared_image.size
+            compared_image = compared_image.crop((0, 0, width_1 - width_1 % 32, height_1))
             compared_tensor = np.array(compared_image).astype(np.float32)
             compared_tensor = np.transpose(compared_tensor, (2, 0, 1))
-            compared_tensor = torch.from_numpy(compared_tensor).float().unsqueeze(0)
+            compared_tensor = compared_tensor / 255.0
+            compared_tensor = np.minimum(compared_tensor, 1.0)
+            compared_tensor = np.array(compared_image).astype(np.int)
+            compared_tensor = torch.from_numpy(compared_tensor).unsqueeze(0)
             
             p = random.random()  # SiameseNet(image_tensor, compared_tensor)
+            p = model(image_tensor, compared_tensor)
+            print(image_tensor.shape, compared_tensor.shape)
+            p = pytorch_msssim.ms_ssim(image_tensor, compared_tensor)
+            """
+            compared_image = compared_image.resize((160, 160), resample=Image.NEAREST, box=None)
+
+            p = SSIM_PIL.compare_ssim(bounded_image, compared_image)
             p_list.append(p)
 
         json0BBoxProbs.append(p_list)
+
+    # Prints 2d probability matrix
     print('\n'.join([''.join(['{:6}'.format(round(item, 2)) for item in row])
                      for row in json0BBoxProbs]))
 else:
@@ -110,37 +154,38 @@ else:
         bounded_image = lastFrameImage.crop(
             (bboxN.pointMajor[0], bboxN.pointMajor[1], bboxN.pointMinor[0], bboxN.pointMinor[1])
         )
+        bounded_image = bounded_image.resize((160, 160), resample=Image.NEAREST, box=None)
+        
+        # Alternate box processing if SNN is used
+        """
         image_tensor = np.array(bounded_image).astype(np.float32)
         image_tensor = np.transpose(image_tensor, (2, 0, 1))
         image_tensor = torch.from_numpy(image_tensor).float().unsqueeze(0)
-        
+        """"
         for bbox0 in json0BBox:
             compared_image = firstFrameImage.crop(
                 (bbox0.pointMajor[0], bbox0.pointMajor[1], bbox0.pointMinor[0], bbox0.pointMinor[1])
             )
+            compared_image = compared_image.resize((160, 160), resample=Image.NEAREST, box=None)
+            
+            # Alternate box processing if SNN is used
+            """
             compared_tensor = np.array(compared_image).astype(np.float32)
             compared_tensor = np.transpose(compared_tensor, (2, 0, 1))
             compared_tensor = torch.from_numpy(compared_tensor).float().unsqueeze(0)
             
             p = random.random()  # SiameseNet(image_tensor, compared_tensor)
+            p = model(image_tensor.float(), compared_tensor.float())
+            """
+            
+            p = SSIM_PIL.compare_ssim(bounded_image, compared_image)
             p_list.append(p)
 
         jsonNBBoxProbs.append(p_list)
+    
+    # Prints 2d probability matrix
     print('\n'.join([''.join(['{:6}'.format(round(item, 2)) for item in row])
                      for row in jsonNBBoxProbs]))
-
-# Debugging block to see whether interpolate works assuming json0BBoxProbs is an identity matrix
-# This tests interpolate under the condition that the input bboxes are already matched
-"""
-for i, lst in enumerate(json0BBoxProbs):
-    for j, ele in enumerate(lst):
-        if i == j:
-            json0BBoxProbs[i][j] = 1
-        else:
-            json0BBoxProbs[i][j] = 0
-
-print('\n'.join([''.join(['{:6}'.format(round(item, 3)) for item in row]) for row in json0BBoxProbs]))
-"""
 
 """
 Here, the program reads through the probability matrix with elements generated by the siamese neural network
@@ -184,6 +229,7 @@ else:
 json0BBox = json0BBoxMatched
 jsonNBBox = jsonNBBoxMatched
 
+# Print coordinates of all boxes after matching
 print("\nOrdered first frame boxes. Number of boxes:", len(json0BBox))
 for box in json0BBox:
     print(box)
@@ -192,11 +238,12 @@ print("\nOrdered last frame boxes. Number of boxes:", len(jsonNBBox))
 for box in jsonNBBox:
     print(box)
 
-# Get file names of the first and last .json file (e.g. 0.json to 6.json)
+# Get file names of the first and last .json file (e.g. 0.json to 7.json)
 firstJson = os.path.basename(json0)
 lastJson = os.path.basename(jsonN)
+
+# Gets number of intermediate frames
 numberOfFrames = int(lastJson.split('.')[0]) - int(firstJson.split('.')[0])
-exit(0)
 
 # Write to .json files storing labeling information for intermediate frames
 # Assumes that box json0BBox[n] and box jsonNBBox[n] describes the same object
@@ -235,7 +282,7 @@ for fileNumber in range(int(firstJson.split('.')[0]) + 1, int(lastJson.split('.'
                     bboxN.pointMinor[1] - bbox0.pointMinor[1])
         pointMinor = [bbox0.pointMinor[0] + pointMinorXChange, bbox0.pointMinor[1] + pointMinorYChange]
 
-        newBBox = BoundingBox(bbox0.label, [pointMajor, pointMinor])
+        newBBox = bounding_box(bbox0.label, [pointMajor, pointMinor])
         BBoxList.append(newBBox.dictVersion())
 
     # Write bounding box labels to .json files storing labels for the intermediate frame
@@ -248,5 +295,5 @@ for fileNumber in range(int(firstJson.split('.')[0]) + 1, int(lastJson.split('.'
         with open(fileName, 'w') as outfile:
             json.dump(outdata, outfile)
     except FileNotFoundError:
-        print("Missing .json: " + fileName)
+        print("Missing .json:", fileName)
         exit(1)

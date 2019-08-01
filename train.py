@@ -31,30 +31,36 @@ Backbone Cellar Training
 """
 
 def train(args):
+    # Get configuration info
     config = get_config(args.config)
     device = torch.device("cuda:"+str(config['gpuid']) if config["cuda"] else "cpu")
-    #print(torch.cuda.get_device_name(device))
     
+    # Create label mapping and set up config for training/validation
     train_label_map = cd.get_train_labels(michael_labels)
     #nlabels = len({k:v for k,v in michael_labels.items()})
     train_config = config['train_dataloaders'][0]
     val_config = config['val_dataloaders'][0]
     
+    # Prepares training dataset (using loader/cropped_dataset) with data loader
     data_loader = get_loader(train_config['dataset'])
     loader = data_loader(split=train_config['split'], root=train_config['root'], img_size=train_config['img_size'], alterations=train_config['alterations'], crop=train_config['crop'], crop_size=train_config['crop_size']) #train_label_map=train_label_map
     trainloader = data.DataLoader(loader,  batch_size=train_config['batch_size'], num_workers=train_config['num_workers'], shuffle=train_config['shuffle'])
     
+    # Prepares validation dataset
     if config['val_epoch'] > 0:
         data_loader = get_loader(val_config['dataset'])
-        loader2 = data_loader(split=val_config['split'], root=val_config['root'], img_size=val_config['img_size'], alterations=val_config['alterations']) #train_label_map=train_label_map
+        loader2 = data_loader(split=val_config['split'], root=val_config['root'], img_size=val_config['img_size'], alterations=val_config['alterations']) 
         valloader = data.DataLoader(loader2, batch_size=val_config['batch_size'], num_workers=val_config['num_workers'], shuffle=val_config['shuffle'])
 
     # Get # of labels in Cityscapes dataset to create the channels
     #nlabels = len(labels.labels)
+    
+    # Create the siamese neural network
     model = get_model(config['arch'])
     model = model.to(device)
     #evaluator = CityscapesEvaluator(nlabels)
 
+    # Configure optimizer (Adam or stochastic GD)
     if config['opt'] == 'sgd':
         optimizer = torch.optim.SGD(model.parameters(), lr=config['l_rate'], momentum=config['momentum'], weight_decay=config['w_decay']) 
         scheduler = lr_scheduler.StepLR(optimizer, 5, gamma=0.1, last_epoch=-1)
@@ -75,6 +81,7 @@ def train(args):
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
+    # Use contrastive or binary CE loss
     #loss_alg = torch.nn.BCELoss()
     loss_alg = ContrastiveLoss(1)
     
@@ -83,7 +90,7 @@ def train(args):
         
         for i, (image_1, image_2, label_1, label_2) in enumerate(trainloader):
             
-            
+            # Get image pair information
             image_1 = image_1.to(device)
             image_2 = image_2.to(device)
             label_1 = label_1.to(device)
@@ -91,8 +98,10 @@ def train(args):
             
             iter = len(trainloader)*epoch + i
             
+            # Prevents gradient accumulation
             optimizer.zero_grad()
-            #print(label_1.shape)
+
+            # Loss calculation if using binary CE loss
             """
             distance_hat = model(image_1, image_2)
             loss = 0.0
@@ -101,20 +110,15 @@ def train(args):
             else:
                 loss += F.binary_cross_entropy_with_logits(distance_hat, torch.tensor([0.0]).to(device)) #,loss_weights[nclass])
             """
-            #print("Iter", iter, "-Loss:", loss, "-Distance:", distance_hat, "-Same class:", torch.all(torch.eq(label_1, label_2)))
-            #print(image_1)
-            #print(image_1.shape)
             
+            # Loss calculation if using contrastive loss
             output1, output2 = model(image_1, image_2)
-            print(output1)
             loss = 0.0
             if torch.all(torch.eq(label_1, label_2)):
                 loss += loss_alg(output1, output2, 1.)
             else:
                 loss += loss_alg(output1, output2, 0.)
             
-            
-            #sleep(1)
             loss.backward()
             optimizer.step()
 
@@ -132,7 +136,7 @@ def train(args):
                 print("Epoch [%d/%d] Iter %d Loss: %.4f" % (epoch+1, config['n_epoch'], iter, loss.item()), end - start)
                 start = time.time()
         
-        ## EVALUATION
+        ## EVALUATION (currently broken)
         """
         if config['val_epoch'] > 0 and ((epoch+1) % config['val_epoch'] == 0):
             # Transfer evaluation functions to a different file and import

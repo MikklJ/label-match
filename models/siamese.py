@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
+# Default embedding net for the siamese network
 class EmbeddingNet(nn.Module):
     def __init__(self):
         super(EmbeddingNet, self).__init__()
@@ -28,20 +28,16 @@ class EmbeddingNet(nn.Module):
     def get_embedding(self, x):
         return self.forward(x)
 
-
-
+    
 """
-IMPLEMENT THE MODEL YOU SEE IN THE
-"Siamese Neural Networks for One-shot Image Recognition" paper
+Embedding net from the "Siamese Neural Networks for One-shot Image Recognition" paper
 Dubbed SalakhNet as in Salakhutdinov, the main author of the paper.
 """
 
 class SalakhNet(nn.Module):
     def __init__(self):
         super(SalakhNet, self).__init__()
-        """
-        TASK FOR MICHAEL:Your layer definitions come here
-        """
+        
         self.convnet = nn.Sequential(
             #nn.AdaptiveAvgPool2d((105, 105)),
             nn.Conv2d(3, 64, 10, stride=1), 
@@ -62,15 +58,12 @@ class SalakhNet(nn.Module):
         )
 
     def forward(self, x):
-        """
-        TASK FOR MICHAEL:Your forward computations come here
-        """
-        #print(x)
         # Create feature maps using CNN
         output = self.convnet(x)
+        
         # Flatten feature maps
         output = output.view(output.size()[0], -1)
-        #print(output)
+        
         # Feed flattened vector into fully connected layer
         output = self.fc(output)
         
@@ -110,7 +103,7 @@ class ClassificationNet(nn.Module):
     def get_embedding(self, x):
         return self.nonlinear(self.embedding_net(x))
 
-
+# Siamese network definition
 class SiameseNet(nn.Module):
     def __init__(self, embedding_net):
         super(SiameseNet, self).__init__()
@@ -124,16 +117,18 @@ class SiameseNet(nn.Module):
         output1 = self.embedding_net(x1)
         output2 = self.embedding_net(x2)
 
-        #print(output1, "\n", output2, "\n")
-        #print(output1.std(dim = 1))
         return output1, output2
+    
+        # Alternate version of the siamese neural network which more closely follows
+        # the paper's network architecture
+        """
         print(output1)
         distance = torch.abs(output1 -  output2).squeeze(0)
         metric = self.fc(distance)
 
         return metric
+        """
         
-        #return output1, output2
     def get_embedding(self, x):
         return self.embedding_net(x)
 
@@ -152,7 +147,7 @@ class TripletNet(nn.Module):
     def get_embedding(self, x):
         return self.embedding_net(x)
 
-# Test whether SalakhNet works
+# Tests the neural network if file is run as main
 if __name__ == "__main__":
     """
     net = SalakhNet()

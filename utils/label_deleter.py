@@ -1,6 +1,10 @@
 """
+UTILITY SCRIPT
+
 This file takes labeled image directories from labels_corrected and deletes their corresponding image directories
 in a clone of michael_processed (michael_processed_left)
+Author: Michael Ji
+Date: July 14, 2019
 
 NOTE: The counting system used is faulty, and directories need to be adjusted
 """
