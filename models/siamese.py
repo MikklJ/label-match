@@ -6,7 +6,8 @@ import torch.nn.functional as F
 class EmbeddingNet(nn.Module):
     def __init__(self):
         super(EmbeddingNet, self).__init__()
-        self.convnet = nn.Sequential(nn.Conv2d(1, 32, 5), nn.PReLU(),
+        self.convnet = nn.Sequential(nn.AdaptiveAvgPool2d((28, 28)),
+                                     nn.Conv2d(3, 32, 5), nn.PReLU(),
                                      nn.MaxPool2d(2, stride=2),
                                      nn.Conv2d(32, 64, 5), nn.PReLU(),
                                      nn.MaxPool2d(2, stride=2))
@@ -42,7 +43,7 @@ class SalakhNet(nn.Module):
         TASK FOR MICHAEL:Your layer definitions come here
         """
         self.convnet = nn.Sequential(
-            nn.AdaptiveAvgPool2d((105, 105)),
+            #nn.AdaptiveAvgPool2d((105, 105)),
             nn.Conv2d(3, 64, 10, stride=1), 
             nn.ReLU(),
             nn.MaxPool2d(2),
@@ -57,7 +58,7 @@ class SalakhNet(nn.Module):
         )
         self.fc = nn.Sequential(
             # Create 4096-element feature vector
-            nn.Linear(256 * 6 * 6, 4096), nn.Sigmoid()
+            nn.Linear(256 * 6 * 6, 4096), nn.Sigmoid(),
         )
 
     def forward(self, x):
@@ -114,6 +115,7 @@ class SiameseNet(nn.Module):
     def __init__(self, embedding_net):
         super(SiameseNet, self).__init__()
         self.embedding_net = embedding_net()
+        
         self.fc = nn.Sequential(
             nn.Linear(4096, 1) #, nn.Sigmoid()
         )
@@ -122,11 +124,16 @@ class SiameseNet(nn.Module):
         output1 = self.embedding_net(x1)
         output2 = self.embedding_net(x2)
 
+        #print(output1, "\n", output2, "\n")
+        #print(output1.std(dim = 1))
+        return output1, output2
+        print(output1)
         distance = torch.abs(output1 -  output2).squeeze(0)
         metric = self.fc(distance)
 
         return metric
-
+        
+        #return output1, output2
     def get_embedding(self, x):
         return self.embedding_net(x)
 

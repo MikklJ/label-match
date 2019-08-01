@@ -26,7 +26,7 @@ train_dataloaders:
     crop: True
     crop_size:
     split: train
-    root: /home/ege/experiments/code/main/label-match/datasets/
+    root: /home/ege/datasets/
     img_size: [-1, -1]
     batch_size: 1
     num_workers: 4
@@ -45,7 +45,7 @@ train_dataloaders:
 val_dataloaders:
   - dataset: cropped
     split: test
-    root: /home/ege/experiments/code/main/label-match/datasets/
+    root: /home/ege/datasets/
     img_size: [-1, -1]
     batch_size: 1
     num_workers: 4

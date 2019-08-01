@@ -74,7 +74,7 @@ class CroppedDataset(data.Dataset):
         images_list = []
         
         # Adds all labeled images to image list
-        images_list = ["/home/ege/experiments/code/main/label-match/"+("/").join(key.split("/")[-4:]) for key in labels]
+        images_list = [key.replace("michael/", "ege/") for key in labels]
         label_list = [label for key, label in labels.items()]
                                    
         if new_split == "train":
@@ -83,20 +83,29 @@ class CroppedDataset(data.Dataset):
         elif new_split == "val":
             images_list = images_list[2000:]
             label_list = label_list[2000:]
-
         
         #images_list = images_list[:30000] #30000
         for i in range(len(images_list)):
             # Different pairs
             
             while True:
-                rand_index = int(np.random.choice(np.arange(len(images_list)), size=1, replace=False))
+                rand_index = int(np.random.choice(np.arange(len(images_list)), size=1, replace=True))
 
                 same_indices = [index for index, image in enumerate(images_list) if label_list[index] == label_list[rand_index]]
                 diff_indices = [index for index, image in enumerate(images_list) if label_list[index] != label_list[rand_index]]
                 
                 if len(same_indices) > 1:
                     break
+                    
+            #rand_index = i
+            #same_indices = [index for index, image in enumerate(images_list) if label_list[index] == label_list[rand_index]]
+            #diff_indices = [index for index, image in enumerate(images_list) if label_list[index] != label_list[rand_index]]
+            #if len(same_indices) == 0:
+            #    continue
+            
+            #print(rand_index)
+            #print(same_indices, "\n")
+            #print(diff_indices, "\n")
             pair_index = np.random.choice(same_indices, size=1, replace=False)
 
             self.data.append({
@@ -105,6 +114,13 @@ class CroppedDataset(data.Dataset):
                 'label_1': label_list[rand_index],
                 'label_2': label_list[pair_index[0]]
             })
+            """
+            self.data.append({
+                'image_1': images_list[rand_index],
+                'image_2': images_list[pair_index[1]],
+                'label_1': label_list[rand_index],
+                'label_2': label_list[pair_index[1]]
+            })"""
             
             pair_index_2 = np.random.choice(diff_indices, size=1, replace=False)
 
@@ -114,6 +130,13 @@ class CroppedDataset(data.Dataset):
                 'label_1': label_list[rand_index],
                 'label_2': label_list[pair_index_2[0]]
             })
+            """
+            self.data.append({
+                'image_1': images_list[rand_index],
+                'image_2': images_list[pair_index_2[1]],
+                'label_1': label_list[rand_index],
+                'label_2': label_list[pair_index_2[1]]
+            })"""
             
             #print(self.data)
             #exit(0)
@@ -157,7 +180,9 @@ class CroppedDataset(data.Dataset):
             
         #info.append("Crop 1 " + str(img_1.size))
         #info.append("Crop 2 " + str(img_2.size))
-
+        img_1 = img_1.resize((105, 105), resample=Image.NEAREST, box=None)
+        img_2 = img_2.resize((105, 105), resample=Image.NEAREST, box=None)
+        
         #print(info)
 
         # Convert images to nparrays
@@ -243,8 +268,8 @@ if __name__ == "__main__":
         if i < 10:
             #print(unnormalize(image_1.cpu().data.numpy()).squeeze().shape, ";", label_1)
             #print(unnormalize(image_2.cpu().data.numpy()).squeeze().shape, ";", label_2, "\n")
-            #new_im = Image.fromarray(unnormalize(image_1.cpu().data.numpy()).squeeze())
-            #new_im.save('test.png')
+            new_im = Image.fromarray(unnormalize(image_1.cpu().data.numpy()).squeeze())
+            new_im.save('test.png')
             #new_im = Image.fromarray(unnormalize(image_2.cpu().data.numpy()).squeeze())
             #new_im.save('test2.png')
             pass
@@ -256,14 +281,15 @@ if __name__ == "__main__":
         #    counter += 1
         #print(np.argmax(label_1.numpy()))
         #print(np.argmax(label_2.numpy()))
-        print(np.argmax(label_1.numpy()))
-        print(np.argmax(label_2.numpy()))
+        #print(np.argmax(label_1.numpy()))
+        #print(np.argmax(label_2.numpy()))
         
         # Check for same-diff balance
         if torch.all(torch.eq(label_1, label_2)):
             same_counter+=1
         elif torch.all(torch.eq(label_1, label_2)) == False:
             diff_counter+=1
+        break
         
     print("Same", same_counter)
     print("Diff", diff_counter)

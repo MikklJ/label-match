@@ -16,11 +16,21 @@ class ContrastiveLoss(nn.Module):
 
     def forward(self, output1, output2, target, size_average=True):
         distances = (output2 - output1).pow(2).sum(1)  # squared distances
-        losses = 0.5 * (target.float() * distances +
-                        (1 + -1 * target).float() * F.relu(self.margin - (distances + self.eps).sqrt()).pow(2))
+        print("FV Distance", distances, "--- Target", target, "\n")
+        losses = 0.5 * (float(target) * distances +
+                        float(1 + -1 * target) * F.relu(self.margin - (distances + self.eps).sqrt()).pow(2))
         return losses.mean() if size_average else losses.sum()
-
-
+    
+class ContrastiveLoss2(nn.Module):
+    def __init__(self):
+        super(ContrastiveLoss2, self).__init__()
+        
+    def forward(self, output1, output2, label):
+        loss_contrastive = torch.mean(
+        (1-label)*torch.pow(euclidean_distance, 2) + 
+        (label)*torch.pow(torch.clamp(self.margin-euclidean_distance, min=0.0), 2))
+        return loss_contrastive
+        
 class TripletLoss(nn.Module):
     """
     Triplet loss

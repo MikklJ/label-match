@@ -23,6 +23,8 @@ from utils.train_utils import *
 from tensorboardX import SummaryWriter
 from loader.bdd_utils import michael_labels 
 from time import sleep
+from models.losses import ContrastiveLoss
+
 """
 Backbone Cellar Training
 
@@ -73,8 +75,9 @@ def train(args):
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    loss_alg = torch.nn.BCELoss()
-        
+    #loss_alg = torch.nn.BCELoss()
+    loss_alg = ContrastiveLoss(1)
+    
     for epoch in range(config['n_epoch']):
         start = time.time()
         
@@ -90,12 +93,26 @@ def train(args):
             
             optimizer.zero_grad()
             #print(label_1.shape)
+            """
             distance_hat = model(image_1, image_2)
             loss = 0.0
             if torch.all(torch.eq(label_1, label_2)):
                 loss += F.binary_cross_entropy_with_logits(distance_hat, torch.tensor([1.0]).to(device)) #,loss_weights[nclass])
             else:
                 loss += F.binary_cross_entropy_with_logits(distance_hat, torch.tensor([0.0]).to(device)) #,loss_weights[nclass])
+            """
+            #print("Iter", iter, "-Loss:", loss, "-Distance:", distance_hat, "-Same class:", torch.all(torch.eq(label_1, label_2)))
+            #print(image_1)
+            #print(image_1.shape)
+            
+            output1, output2 = model(image_1, image_2)
+            print(output1)
+            loss = 0.0
+            if torch.all(torch.eq(label_1, label_2)):
+                loss += loss_alg(output1, output2, 1.)
+            else:
+                loss += loss_alg(output1, output2, 0.)
+            
             
             #sleep(1)
             loss.backward()
